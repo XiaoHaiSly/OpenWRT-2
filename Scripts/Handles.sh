@@ -53,6 +53,25 @@ if [ -d *"luci-app-mini-diskmanager"* ]; then
 	cd $PKG_PATH && echo "mini-diskmanager has been fixed!"
 fi
 
+#修改openlist菜单位置到nas
+if [ -d "luci-app-openlist2" ]; then
+	echo " " && cd ./luci-app-openlist2/
+
+	sed -i "s/services/nas/g" ./luci-app-openlist2/root/usr/share/luci/menu.d/luci-app-openlist2.json
+
+	cd $PKG_PATH && echo "openlist2 menu has been fixed!"
+fi
+
+#修改qbittorrent菜单位置到nas
+if [ -d *"luci-app-qbittorrent"* ]; then
+	echo " " && cd ./luci-app-qbittorrent/
+
+	sed -i "s/services/nas/g" ./luci-app-qbittorrent/root/usr/share/luci/menu.d/luci-app-qbittorrent.json
+
+
+	cd $PKG_PATH && echo "qbittorrent menu has been fixed!"
+fi
+
 #修复TailScale配置文件冲突
 TS_FILE=$(find ../feeds/packages/ -maxdepth 3 -type f -wholename "*/tailscale/Makefile")
 if [ -f "$TS_FILE" ]; then
