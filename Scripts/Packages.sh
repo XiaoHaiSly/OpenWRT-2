@@ -63,6 +63,17 @@ UPDATE_PACKAGE "theme-fluent" "LazuliKao/luci-theme-fluent" "main"
 UPDATE_PACKAGE "substore" "XiaoHaiSly/OpenWrt-SubStore" "main"
 UPDATE_PACKAGE "miaomiaowu" "XiaoHaiSly/OpenWrt-MMW" "main"
 UPDATE_PACKAGE "docker" "lisaac/luci-lib-docker" "master"
+# lisaac/luci-lib-docker 仓库结构同样是嵌套的：collections/luci-lib-docker/，
+# 和 dockerman 一样的坑，一并拍平（先前只按"根目录有 Makefile"处理是错的）。
+if [ -d "./luci-lib-docker/collections/luci-lib-docker" ]; then
+	mv -f ./luci-lib-docker/collections/luci-lib-docker ./.docker-flatten-tmp
+	rm -rf ./luci-lib-docker
+	mv -f ./.docker-flatten-tmp ./luci-lib-docker
+	echo "docker(luci-lib-docker) package has been flattened!"
+else
+	echo "docker(luci-lib-docker) flatten failed: collections/luci-lib-docker not found in clone!"
+fi
+
 UPDATE_PACKAGE "dockerman" "lisaac/luci-app-dockerman" "master"
 # lisaac/luci-app-dockerman 仓库结构为 applications/luci-app-dockerman/，
 # 而仓库目录本身克隆下来也叫 luci-app-dockerman —— 与 UPDATE_PACKAGE 的
