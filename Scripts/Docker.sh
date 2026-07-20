@@ -1,36 +1,15 @@
 #!/usr/bin/env bash
 
-# ============================================================
-# Packages.sh 集成点
-# docker/dockerman 改成从用户自己整理好的合并仓库拉取（不再直接依赖
-# lisaac 上游仓库的分支名/目录结构/版本号写法），这里只保留：
-#   1. 克隆合并仓库并铺到 package/ 下
-#   2. 清理阶段保护官方 dockerd/docker 不被误删（dockerd 编译时会拿
-#      "../docker/Makefile" 做版本一致性校验，两者都不能删）
-# ============================================================
-
-# 合并仓库地址：https://github.com/XiaoHaiSly/OpenWrt-dockerman
 DOCKER_STACK_REPO="XiaoHaiSly/OpenWrt-dockerman"
 DOCKER_STACK_BRANCH="main"
 
-# UPDATE_PACKAGE 通配符清理阶段（按 *docker* 匹配删除旧目录）不应该删除的
-# 官方包目录基名，Packages.sh 的清理循环会读这个变量。
 DOCKER_STACK_PROTECTED_BASENAMES="dockerd docker"
 
-# 克隆合并仓库，把 luci-lib-docker / luci-app-dockerman 铺到当前目录（package/）下。
-# 合并仓库里这两个包已经是拍平过、PKG_VERSION 去掉 v 前缀、dockerman 的
-# nftables 兼容补丁也已经永久打好的状态，这里不需要再做任何后处理。
 docker_stack_install_from_mirror() {
     local tmp_dir="./.openwrt-docker-stack-tmp"
 
     rm -rf "$tmp_dir" ./luci-lib-docker ./luci-app-dockerman
 
-    # 官方 luci feed 自带同名的 feeds/luci/applications/luci-app-dockerman，
-    # 不删的话会和这里装的 package/luci-app-dockerman 撞包名，build 系统按
-    # 目录扫描顺序会选中 feeds/ 下那份（旧版、只支持 iptables），而不是这里
-    # 装的版本 —— 之前用 UPDATE_PACKAGE 时它自带的通配符清理顺带删了这个目录，
-    # 现在改成直接 clone，要在这里手动补上。注意不要动 feeds/packages/utils/docker
-    # 和 dockerd，dockerd 编译时要用官方 docker(CLI) 的 Makefile 做版本校验。
     local OFFICIAL_DOCKERMAN
     OFFICIAL_DOCKERMAN=$(find ../feeds/luci -maxdepth 3 -type d -iname 'luci-app-dockerman' 2>/dev/null)
     if [ -n "$OFFICIAL_DOCKERMAN" ]; then
@@ -109,7 +88,6 @@ _docker_stack_resolve_dockerman_init() {
         }
     done
 
-    # 兜底：Packages.sh 未重命名/未移入 feeds 路径时（本项目 UPDATE_PACKAGE 默认行为），全量查找
     candidate=$(find "$build_dir/package" "$build_dir/feeds" -maxdepth 6 \
         -type f -path '*/luci-app-dockerman/root/etc/init.d/dockerman' 2>/dev/null | head -n1)
     [ -n "$candidate" ] && {
@@ -635,8 +613,8 @@ _docker_stack_patch_process_config_nftables() {
                     print "\t\tnftables_create_blocking_table || {"
                     print "\t\t\tset_blocking_rule_error"
                     print "\t\t\treturn 1"
-                    print "\t\t}"
-                    print "\t\tif ! nft flush chain inet \"${NFT_DOCKER_USER_TABLE}\" \"${NFT_DOCKER_USER_CHAIN}\"; then"
+                    print "\t\tfi"
+                    print "\tif ! nft flush chain inet \"${NFT_DOCKER_USER_TABLE}\" \"${NFT_DOCKER_USER_CHAIN}\"; then"
                     print "\t\t\tlogger -t \"dockerd-init\" -p err \"Failed to reset nftables docker policy chain\""
                     print "\t\t\tset_blocking_rule_error"
                     print "\t\t\treturn 1"
@@ -963,14 +941,10 @@ docker_stack_sync_nftables_compat() {
         return 1
     }
 
-    # dockerman 不参与 nftables 补丁本身，但它是本项目实际启用 dockerd 的唯一入口
-    # （CONFIG_PACKAGE_luci-app-dockerman=y 触发 +dockerd 依赖），缺失时不能静默放行，
-    # 否则会出现"补丁成功但 dockerd 从未被 .config 选中、也从未编译"的假成功。
     if ! _docker_stack_resolve_dockerman_init "$build_dir" >/dev/null; then
         echo "错误：未找到 luci-app-dockerman 的 init 脚本，dockerman 包可能未成功克隆/安装，dockerd 将不会被 .config 选中" >&2
         return 1
     fi
-
 
     if [ "$dry_run" = "1" ]; then
         echo "[dry-run] dockerd Makefile DEPENDS will switch to nftables-default compatible set"
