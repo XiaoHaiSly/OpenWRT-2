@@ -39,12 +39,12 @@ docker_stack_install_from_mirror() {
 
     if ! git clone --depth=1 --single-branch --branch "$DOCKER_STACK_BRANCH" \
         "https://github.com/$DOCKER_STACK_REPO.git" "$tmp_dir"; then
-        echo "错误：克隆合并仓库 $DOCKER_STACK_REPO 失败" >&2
+        echo "错误：克隆仓库 $DOCKER_STACK_REPO 失败" >&2
         return 1
     fi
 
     if [ ! -d "$tmp_dir/luci-lib-docker" ] || [ ! -d "$tmp_dir/luci-app-dockerman" ]; then
-        echo "错误：合并仓库里没有找到 luci-lib-docker 或 luci-app-dockerman 目录" >&2
+        echo "错误：仓库里没有找到 luci-lib-docker 或 luci-app-dockerman 目录" >&2
         rm -rf "$tmp_dir"
         return 1
     fi
