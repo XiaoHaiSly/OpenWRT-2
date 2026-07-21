@@ -2,11 +2,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (C) 2026 VIKINGYFY
 
-# 提前 source Docker.sh：UPDATE_PACKAGE 的清理逻辑要用到其中的
-# DOCKER_STACK_PROTECTED_BASENAMES（保护 dockerd/docker 不被通配符误删），
-# 这个变量必须在下面第一次调用 UPDATE_PACKAGE 之前就绪。
-[ -f "$GITHUB_WORKSPACE/Scripts/Docker.sh" ] && source "$GITHUB_WORKSPACE/Scripts/Docker.sh"
-
 #安装和更新软件包
 UPDATE_PACKAGE() {
 	local PKG_NAME=$1
@@ -22,11 +17,7 @@ UPDATE_PACKAGE() {
 	for NAME in "${PKG_LIST[@]}"; do
 		# 查找匹配的目录
 		echo "Search directory: $NAME"
-		# 保护名单来自 Scripts/Docker.sh 的 DOCKER_STACK_PROTECTED_BASENAMES
-		# （目前是 dockerd/docker，理由见该文件顶部注释）；如果 Docker.sh 还没被
-		# source 过（比如脚本执行顺序变了）就退回硬编码兜底，不让保护直接失效。
-		local PROTECT_REGEX="/($(echo "${DOCKER_STACK_PROTECTED_BASENAMES:-dockerd docker}" | tr ' ' '|'))\$"
-		local FOUND_DIRS=$(find ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d -iname "*$NAME*" 2>/dev/null | grep -vE "$PROTECT_REGEX")
+		local FOUND_DIRS=$(find ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d -iname "*$NAME*" 2>/dev/null)
 
 		# 删除找到的目录
 		if [ -n "$FOUND_DIRS" ]; then
@@ -56,7 +47,7 @@ UPDATE_PACKAGE() {
 # UPDATE_PACKAGE "open-app-filter" "destan19/OpenAppFilter" "master" "" "luci-app-appfilter oaf" 这样会把原有的open-app-filter，luci-app-appfilter，oaf相关组件删除，不会出现coremark错误。
 
 # UPDATE_PACKAGE "包名" "项目地址" "项目分支" "pkg/name，可选，pkg为从大杂烩中单独提取包名插件；name为重命名为包名"
-UPDATE_PACKAGE "argon" "XiaoHaiSly/luci-theme-argon" "master"
+UPDATE_PACKAGE "argon" "sbwml/luci-theme-argon" "openwrt-25.12"
 UPDATE_PACKAGE "aurora" "eamonxg/luci-theme-aurora" "master"
 UPDATE_PACKAGE "aurora-config" "eamonxg/luci-app-aurora-config" "master"
 UPDATE_PACKAGE "kucat" "sirpdboy/luci-theme-kucat" "master"
@@ -64,13 +55,6 @@ UPDATE_PACKAGE "kucat-config" "sirpdboy/luci-app-kucat-config" "master"
 UPDATE_PACKAGE "noobwrt" "nooblk-98/luci-theme-noobwrt" "master"
 UPDATE_PACKAGE "shadcn" "eamonxg/luci-theme-shadcn" "main"
 UPDATE_PACKAGE "theme-fluent" "LazuliKao/luci-theme-fluent" "main"
-
-# 自定义
-UPDATE_PACKAGE "substore" "XiaoHaiSly/OpenWrt-SubStore" "main"
-UPDATE_PACKAGE "miaomiaowu" "XiaoHaiSly/OpenWrt-MMW" "main"
-# docker/dockerman 不再直接从 lisaac 上游拉取，改成从整理好的合并仓库安装，
-# 具体仓库地址在 Scripts/Docker.sh 顶部的 DOCKER_STACK_REPO 变量里改。
-type docker_stack_install_from_mirror >/dev/null 2>&1 && docker_stack_install_from_mirror
 
 UPDATE_PACKAGE "momo" "nikkinikki-org/OpenWrt-momo" "main"
 UPDATE_PACKAGE "nikki" "nikkinikki-org/OpenWrt-nikki" "main"

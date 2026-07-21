@@ -3,15 +3,33 @@
 DOCKER_STACK_REPO="XiaoHaiSly/OpenWrt-dockerman"
 DOCKER_STACK_BRANCH="main"
 
-DOCKER_STACK_PROTECTED_BASENAMES="dockerd docker"
+_docker_stack_autodetect_build_dir() {
+    local dir
+    dir="$(pwd)"
+    local i
+    for i in 1 2 3 4 5 6; do
+        if [ -d "$dir/feeds" ] && [ -d "$dir/package" ]; then
+            echo "$dir"
+            return 0
+        fi
+        local parent
+        parent="$(cd "$dir/.." 2>/dev/null && pwd)"
+        [ -n "$parent" ] && [ "$parent" != "$dir" ] || break
+        dir="$parent"
+    done
+    return 1
+}
 
 docker_stack_install_from_mirror() {
-    local tmp_dir="./.openwrt-docker-stack-tmp"
+    local build_dir="$1"
+    local pkg_dir="$build_dir/package"
+    local tmp_dir="$pkg_dir/.openwrt-docker-stack-tmp"
 
-    rm -rf "$tmp_dir" ./luci-lib-docker ./luci-app-dockerman
+    mkdir -p "$pkg_dir"
+    rm -rf "$tmp_dir" "$pkg_dir/luci-lib-docker" "$pkg_dir/luci-app-dockerman"
 
     local OFFICIAL_DOCKERMAN
-    OFFICIAL_DOCKERMAN=$(find ../feeds/luci -maxdepth 3 -type d -iname 'luci-app-dockerman' 2>/dev/null)
+    OFFICIAL_DOCKERMAN=$(find "$build_dir/feeds/luci" -maxdepth 3 -type d -iname 'luci-app-dockerman' 2>/dev/null)
     if [ -n "$OFFICIAL_DOCKERMAN" ]; then
         while read -r DIR; do
             rm -rf "$DIR"
@@ -31,10 +49,24 @@ docker_stack_install_from_mirror() {
         return 1
     fi
 
-    mv -f "$tmp_dir/luci-lib-docker" ./luci-lib-docker
-    mv -f "$tmp_dir/luci-app-dockerman" ./luci-app-dockerman
+    mv -f "$tmp_dir/luci-lib-docker" "$pkg_dir/luci-lib-docker"
+    mv -f "$tmp_dir/luci-app-dockerman" "$pkg_dir/luci-app-dockerman"
     rm -rf "$tmp_dir"
     echo "docker/dockerman 已从合并仓库 $DOCKER_STACK_REPO 安装完成！"
+}
+
+docker_stack_setup() {
+    local build_dir="$1"
+
+    if [ -z "$build_dir" ]; then
+        build_dir="$(_docker_stack_autodetect_build_dir)" || {
+            echo "错误：自动探测 OpenWrt 源码根目录失败（需要同时包含 feeds/ 和 package/ 子目录），请显式传参：bash Docker.sh <build_dir>" >&2
+            return 1
+        }
+    fi
+
+    docker_stack_install_from_mirror "$build_dir" || return 1
+    docker_stack_sync_nftables_compat "$build_dir" || return 1
 }
 
 _docker_stack_resolve_component_makefile() {
@@ -613,8 +645,8 @@ _docker_stack_patch_process_config_nftables() {
                     print "\t\tnftables_create_blocking_table || {"
                     print "\t\t\tset_blocking_rule_error"
                     print "\t\t\treturn 1"
-                    print "\t\tfi"
-                    print "\tif ! nft flush chain inet \"${NFT_DOCKER_USER_TABLE}\" \"${NFT_DOCKER_USER_CHAIN}\"; then"
+                    print "\t\t}"
+                    print "\t\tif ! nft flush chain inet \"${NFT_DOCKER_USER_TABLE}\" \"${NFT_DOCKER_USER_CHAIN}\"; then"
                     print "\t\t\tlogger -t \"dockerd-init\" -p err \"Failed to reset nftables docker policy chain\""
                     print "\t\t\tset_blocking_rule_error"
                     print "\t\t\treturn 1"
@@ -983,3 +1015,7 @@ docker_stack_sync_nftables_compat() {
     _docker_stack_set_or_append_sysctl_value "$dockerd_sysctl" "net.ipv4.ip_forward" "1" || return 1
     _docker_stack_set_or_append_sysctl_value "$dockerd_sysctl" "net.ipv6.conf.all.forwarding" "1" || return 1
 }
+
+if [ "${BASH_SOURCE[0]}" = "${0}" ]; then
+    docker_stack_setup "$1"
+fi

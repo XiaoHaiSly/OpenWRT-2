@@ -222,31 +222,14 @@ if [ -d "$PKG_PATH/luci-app-aurora-config" ]; then
 fi
 
 #修改mini-diskmanager菜单位置
-if [ -d *"luci-app-mini-diskmanager"* ]; then
-	echo " " && cd ./luci-app-mini-diskmanager/
-
-	sed -i "s/services/system/g" ./luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json
-
-	cd $PKG_PATH && echo "mini-diskmanager has been fixed!"
-fi
-
-#修改openlist2菜单位置到nas
-if [ -d "luci-app-openlist2" ]; then
-	echo " " && cd ./luci-app-openlist2/
-
-	sed -i "s/services/nas/g" ./luci-app-openlist2/root/usr/share/luci/menu.d/luci-app-openlist2.json
-
-	cd $PKG_PATH && echo "openlist2 menu has been fixed!"
-fi
-
-#修改qbittorrent菜单位置到nas
-if [ -d *"luci-app-qbittorrent"* ]; then
-	echo " " && cd ./luci-app-qbittorrent/
-
-	sed -i "s/services/nas/g" ./luci-app-qbittorrent/root/usr/share/luci/menu.d/luci-app-qbittorrent.json
-
-
-	cd $PKG_PATH && echo "qbittorrent menu has been fixed!"
+if [ -d "$PKG_PATH/luci-app-mini-diskmanager" ]; then
+	echo " "
+	if sed -i "s/services/system/g" \
+		"$PKG_PATH/luci-app-mini-diskmanager/luci-app-mini-diskmanager/root/usr/share/luci/menu.d/luci-app-mini-diskmanager.json"; then
+		echo "mini-diskmanager has been fixed!"
+	else
+		echo "mini-diskmanager fix failed; continuing!"
+	fi
 fi
 
 #修复TailScale配置文件冲突
@@ -271,18 +254,5 @@ if [ -f "$RUST_FILE" ]; then
 		echo "rust has been fixed!"
 	else
 		echo "rust fix failed; continuing!"
-	fi
-fi
-
-#修复dockerd/dockerman的nftables兼容性（fw4默认使用nftables，dockerd/dockerman原版基于iptables）
-DOCKER_BUILD_DIR="$(cd "$PKG_PATH/.." 2>/dev/null && pwd)"
-if [ -n "$DOCKER_BUILD_DIR" ] && [ -f "$GITHUB_WORKSPACE/Scripts/Docker.sh" ]; then
-	echo " "
-	source "$GITHUB_WORKSPACE/Scripts/Docker.sh"
-
-	if docker_stack_sync_nftables_compat "$DOCKER_BUILD_DIR"; then
-		echo "docker nftables compat has been fixed!"
-	else
-		echo "docker nftables compat fix failed; continuing!"
 	fi
 fi
