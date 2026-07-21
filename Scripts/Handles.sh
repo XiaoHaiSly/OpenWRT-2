@@ -256,3 +256,14 @@ if [ -f "$RUST_FILE" ]; then
 		echo "rust fix failed; continuing!"
 	fi
 fi
+
+#修复Docker nftables 兼容问题
+DOCKER_BUILD_DIR="$(cd "$PKG_PATH/.." 2>/dev/null && pwd)"
+if [ -f "$GITHUB_WORKSPACE/Scripts/Docker.sh" ]; then
+	echo " "
+	if bash "$GITHUB_WORKSPACE/Scripts/Docker.sh" "$DOCKER_BUILD_DIR"; then
+		echo "docker stack (luci-lib-docker/luci-app-dockerman/nftables compat) has been set up!"
+	else
+		echo "docker stack setup failed; continuing!"
+	fi
+fi
