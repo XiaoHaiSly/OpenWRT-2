@@ -53,7 +53,7 @@ cat > ./files/etc/apk/repositories.d/momo.list <<EOF
 https://momomomo.pages.dev/SNAPSHOT/aarch64_cortex-a53/momo/packages.adb
 EOF
 
-cat > ./files/etc/apk/keys/momo_nikki-apk.pem <<'EOF'
+cat > ./files/etc/apk/keys/nikki_momo-apk.pem <<'EOF'
 -----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAETOwt83tzTFqyvjwimjuuvslR40t6
 XnROMwxZsC0iQAr2hHjuXX8qyhf5WaD2Hd897+Gc1/+4W4DMqroNp5w2Dg==
