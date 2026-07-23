@@ -221,23 +221,26 @@ if [ -d "$PKG_PATH/luci-app-mini-diskmanager" ]; then
 	fi
 fi
 
-#修改openlist菜单位置到nas
-if [ -d "luci-app-openlist" ]; then
-	echo " " && cd ./luci-app-openlist/
-
-	sed -i "s/services/nas/g" ./luci-app-openlist/root/usr/share/luci/menu.d/luci-app-openlist.json
-
-	cd $PKG_PATH && echo "openlist menu has been fixed!"
+#修改openlist菜单位置
+if [ -d "$PKG_PATH/luci-app-openlist" ]; then
+	echo " "
+	if sed -i "s/services/nas/g" \
+		"$PKG_PATH/luci-app-openlist/luci-app-openlist/root/usr/share/luci/menu.d/luci-app-openlist.json"; then
+		echo "openlist has been fixed!"
+	else
+		echo "openlist fix failed; continuing!"
+	fi
 fi
 
-#修改qbittorrent菜单位置到nas
-if [ -d *"luci-app-qbittorrent"* ]; then
-	echo " " && cd ./luci-app-qbittorrent/
-
-	sed -i "s/services/nas/g" ./luci-app-qbittorrent/root/usr/share/luci/menu.d/luci-app-qbittorrent.json
-
-
-	cd $PKG_PATH && echo "qbittorrent menu has been fixed!"
+#修改qbittorrent菜单位置
+if [ -d "$PKG_PATH/luci-app-qbittorrent" ]; then
+	echo " "
+	if sed -i "s/services/nas/g" \
+		"$PKG_PATH/luci-app-qbittorrent/luci-app-qbittorrent/root/usr/share/luci/menu.d/luci-app-qbittorrent.json"; then
+		echo "qbittorrent has been fixed!"
+	else
+		echo "qbittorrent fix failed; continuing!"
+	fi
 fi
 
 #修复TailScale配置文件冲突
