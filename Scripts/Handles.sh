@@ -222,8 +222,8 @@ if [ -d "$PKG_PATH/luci-app-mini-diskmanager" ]; then
 fi
 
 #修改openlist菜单位置
-OPENLIST_MENU="$(find -L "$PKG_PATH" -maxdepth 10 -type f -name 'luci-app-openlist.json' -path '*/menu.d/*' -print -quit 2>/dev/null)"
-if [ -n "$OPENLIST_MENU" ]; then
+OPENLIST_MENU="$PKG_PATH/../feeds/luci/applications/luci-app-openlist/root/usr/share/luci/menu.d/luci-app-openlist.json"
+if [ -f "$OPENLIST_MENU" ]; then
 	echo " "
 	if sed -i "s/services/nas/g" "$OPENLIST_MENU"; then
 		echo "openlist has been fixed! ($OPENLIST_MENU)"
@@ -232,7 +232,7 @@ if [ -n "$OPENLIST_MENU" ]; then
 	fi
 else
 	echo " "
-	echo "openlist menu.d json not found under $PKG_PATH; skipping (check CONFIG_PACKAGE_luci-app-openlist is enabled and feeds install ran before Handles.sh)!"
+	echo "openlist menu.d json not found at $OPENLIST_MENU; skipping (check CONFIG_PACKAGE_luci-app-openlist is enabled and feeds install ran before Handles.sh)!"
 fi
 
 #修改qbittorrent菜单位置
