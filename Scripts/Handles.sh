@@ -221,6 +221,7 @@ if [ -d "$PKG_PATH/luci-app-mini-diskmanager" ]; then
 	fi
 fi
 
+#修改openlist菜单位置
 OPENLIST_MENU="$(find "$PKG_PATH" -maxdepth 4 -type f -name 'luci-app-openlist.json' -path '*/menu.d/*' -print -quit 2>/dev/null)"
 if [ -n "$OPENLIST_MENU" ]; then
 	echo " "
